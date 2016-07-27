@@ -1,0 +1,382 @@
+---
+title: "FIT"
+author: "Koji Iwayama"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{FIT}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: bibliography.bib
+---
+
+## Introduction
+FIT is a software package for integration of transcriptome data of samples in the field and meteorological data by 
+modeling their relation. This software defines a statistical model of transcriptomes and provides an 
+efficient method for training the model and for transcriptome prediction of unsequenced samples. 
+Given the attributes of samples and meteorological data, this software predicts expression of a gene as 
+\[
+\hat{\boldsymbol s}=\beta_0 + \boldsymbol X \boldsymbol \beta,
+\]
+where $\hat{\boldsymbol s}$ is the predictions of $\log_2$-transformed values of the normalized 
+expression levels, and $\boldsymbol \beta_0$ is a constant. Design matrix $\boldsymbol X$ 
+consists of the plant's age and the genotype of the samples, the circadian clock, the response to 
+environmental stimuli, and the interactions between the age and the clock and the age and the 
+environmental response. 
+
+The plant's age is the vector of the number of days after transplanting; it is scaled to have the mean of 
+$0$ and standard deviation of $1$. The circadian clock is represented by the linear combination of 
+the cosine and sine curves with a $24~\mathrm{hr}$ period. The response to environmental stimuli 
+is the cumulative sum of nonlinearly transformed environmental stimuli during a given time period. 
+
+The model is specified by a set of regression coefficients and other parameters that are used for 
+transformation of meteorological data into the input variables for regression of the expectation values 
+for the gene expression. Optimization of regression coefficients $\beta_0$ and 
+$\boldsymbol \beta$ and variable selection are simultaneously performed using an adaptive group lasso (@Wang2008). Thus, this software 
+explores the regression coefficients minimizing following cost function:
+\[
+\left(\hat{\boldsymbol s} - \boldsymbol s\right)^T
+\left(\hat{\boldsymbol s} - \boldsymbol s\right) 
++\lambda\left(\sum_{k\in \{d, r, dr, n\}}\zeta_k|\beta_k|+\zeta_{c}\sqrt{\beta_{cos}^2+\beta_{sin}^2}+\zeta_{dc}\sqrt{\beta_{dcos}^2+\beta_{dsin}^2}\right),
+\]
+where $\boldsymbol s$ is the observed $\log_2$-transformed values of the normalized expressions, $\lambda$ is the regularization parameter, and $\zeta_j$ is the 
+adaptive weight for penalizing each covariate. The values of parameters $\lambda$ and $\zeta_j$ are automatically selected in the software. Regression 
+coefficients, $\beta_d$, $\beta_r$, $\beta_{dr}$, $\beta_{n}$, $\beta_{cos}$, $\beta_{sin}$, 
+$\beta_{dcos}$, and $\beta_{dsin}$ correspond to the plant's age, the response to environmental stimuli, their interaction, the genotype, 
+the cosine and sine components of the circadian clock, and those of the interaction between the age and the circadian clock. 
+Parameters related to the transformation of meteorological data are optimized by means of the Nelder-Mead 
+algorithm (@Nelder1965). 
+
+More details of the model is given in later sections or see the article by @Iwayama2016. 
+
+## Installation
+FIT can be easily installed from CRAN by typing the following command in an R session:
+```{r, eval=FALSE}
+install.packages('FIT')
+```
+
+## Getting Started
+To load the FIT package, enter the following command in an R session:
+```{r chunk-load, eval=TRUE}
+requireNamespace('FIT')
+```
+Here, using `requireNamespace()` to load the package and calling its API function with namespace qualifier 
+```FIT::``` rather than loading via `library()` are recommended to avoid namespace contamination because the 
+FIT package exports fairly ubiquitous names such as ```optim``` and ```predict``` as its API. 
+
+First, typical flow of the training of the model is shown below. Before starting, we need to load the 
+attributes of samples, the meteorological data, and the expression data. 
+```{r chunk-train-data, eval=TRUE}
+train.attribute.file <- system.file('extdata', 'train.attribute', package='FIT')
+train.weather.file <- system.file('extdata', 'train.weather', package='FIT')
+train.expression.file <- system.file('extdata', 'train.expression', package='FIT')
+
+training.attribute  <- FIT::load.attribute(train.attribute.file);
+training.weather    <- FIT::load.weather(train.weather.file, 'weather',
+                                        c('temperature', 'radiation'))
+training.expression <- FIT::load.expression(train.expression.file, 'ex', 
+                                           c('Os12g0189300', 'Os02g0724000', 'Os02g0139700', 'Os06g0133200'))
+```
+The first argument of these functions is the path of a file. If the file is a loadable ```.Rdata```, 
+then the name of a dataframe object in an ```.Rdata``` is specified by the second argument. Otherwise, data
+are loaded by ```dget()``` in the function. The third arguments of ```FIT::load.weather()``` and 
+```FIT::load.expression``` designate an array of weather factors to be taken into account during the 
+construction of models and genes to be loaded, respectively. When we want to load all items or genes from 
+the data, these arguments can be skipped. 
+
+Because the optimization by the Nelder-Mead algorithm depends on its initial values, it is desirable 
+to select better initial model parameters. The FIT package offers a way to select the initial model 
+parameters by means of a grid search. A grid of a parameter is specified by a list, where each element is a candidate 
+value of the corresponding parameter variable. The following is an example of specification of a grid. 
+```{r chunk-grid, eval=TRUE}
+grid.coords <- list(
+  env.temperature.threshold = c(10, 15, 20, 25, 30),
+  env.temperature.amplitude = c(-100/30, -1/30, 1/30, 100/30),
+  env.radiation.threshold = c(1, 10, 20, 30, 40),
+  env.radiation.amplitude = c(-100/80, -1/80, 1/80, 100/80),  
+  env.temperature.period = c(1, 3, 9, 27, 72, 144, 144*3),
+  env.radiation.period = c(1, 3, 9, 27, 72, 144, 144*3),
+  gate.temperature.phase = seq(0, 23*60, 1*60),
+  gate.radiation.phase = seq(0, 23*60, 1*60),
+  gate.temperature.threshold = cos(pi*seq(4,24,4)/24),
+  gate.radiation.threshold = cos(pi*seq(4,24,4)/24),
+  gate.temperature.amplitude = c(-5, 5),
+  gate.radiation.amplitude = c(-5, 5)
+)
+```
+
+The training of the model parameters consists of three stages: initialization of the model parameters, optimization of the parameters other than the regression coefficients, and fixation of the regression 
+coefficients. Users can configure each stage of the training via a custom data structure ```recipe```. 
+A recipe can be constructed by the function `FIT::make.recipe()`. 
+```{r chunk-recipe, eval=TRUE}
+recipe <- FIT::make.recipe(c('temperature', 'radiation'), 
+                           init = 'gridsearch',
+                           optim = c('lm'),
+                           fit = 'fit.lasso',
+                           init.data = grid.coords,
+                           time.step = 10)
+```
+The first argument specifies weather factors to be taken into account, i.e., information on temperature and 
+radiation are used in this sample. This recipe configures the following procedure. At the first stage, the 
+initial value of the model parameters is selected from grid points ```grid.coords``` via a grid search. At 
+the second stage, the parameters are optimized by the Nelder-Mead algorithm. The regression coefficients are 
+optimized by linear regression rather than the adaptive group lasso at this stage. After the optimization of the model 
+parameters other than the regression coefficients at the second stage, the regression coefficients are 
+fixed by the adaptive group lasso. 
+
+Using the recipe, we can train the model by means of the following code: 
+```{r chunk-train, eval=TRUE}
+models <- FIT::train(training.expression,
+                     training.attribute,
+                     training.weather,
+                     recipe)
+```
+Because function ```FIT::train()``` returns a list of lists of the trained models, it is convenient 
+to simplify it to the list of the models by means of ```unlist()```.
+```{r, eval=TRUE}
+models <- unlist(models)
+```
+
+Using the trained models, we can predict gene expression in unsequenced samples on the basis of the attributes of 
+samples and the meteorological data. 
+```{r chunk-predict, eval=TRUE}
+prediction.attribute.file <- system.file('extdata', 'prediction.attribute', package = 'FIT')
+prediction.weather.file <- system.file('extdata', 'prediction.weather', package = 'FIT')
+
+prediction.attribute  <- FIT::load.attribute(prediction.attribute.file);
+prediction.weather    <- FIT::load.weather(prediction.weather.file, 'weather',
+                                            c('temperature', 'radiation'))
+prediction <- FIT::predict(models, prediction.attribute, prediction.weather)
+```
+
+To evaluate prediction accuracy, the software contains function ```FIT::prediction.errors()```, which returns 
+a list of the sum of squared errors. 
+```{r chunk-error, fig.height=2, eval=TRUE}
+prediction.expression.file <- system.file('extdata', 'prediction.expression', package = 'FIT')
+
+prediction.expression <- FIT::load.expression(prediction.expression.file, 'ex', 
+                                            c('Os12g0189300', 'Os02g0724000', 'Os02g0139700', 'Os06g0133200'))
+prediction.errors <- FIT::prediction.errors(models,
+                                           prediction.expression,
+                                           prediction.attribute,
+                                           prediction.weather)
+```
+
+```FIT::predict()``` returns the list of predicted expression levels. An object representing the expression data 
+holds the data as ```rawdata```. The code for plotting the predicted and observed expression is shown below. 
+```{r chunk-plot, fig.height=4, eval=TRUE}
+for(i in 1:length(prediction)){
+  plot(prediction[[i]], prediction.expression$rawdata[,i], 
+      xlab='prediction', ylab='observation')
+  title(models[[i]]$gene)
+}
+```
+
+## Details of the model
+As mentioned above, package FIT predicts gene expression levels using the following equation: 
+\[
+\hat{\boldsymbol s}=\beta_0 + \boldsymbol X \boldsymbol \beta.
+\]
+Regression coefficients $\beta_0$ and $\boldsymbol\beta$ are present as variable ```coef``` of the 
+S4 object representing the model whose list is returned by function ```FIT::train()```. 
+```{r, dependson="chunk-train", eval=TRUE}
+models[[1]]$coefs
+```
+Here, ```intercept``` is $\beta_0$ and the remaining elements are those of $\boldsymbol\beta$. 
+Design matrix $\boldsymbol X$ is constructed as 
+\[
+\boldsymbol X=\left(
+\boldsymbol d, \boldsymbol n, \boldsymbol c^{cos}, \boldsymbol c^{sin}, \boldsymbol r, 
+\boldsymbol d\circ\boldsymbol c^{cos}, \boldsymbol d\circ\boldsymbol c^{sin}, 
+\boldsymbol d\circ\boldsymbol r
+\right). 
+\]
+Here, $\boldsymbol a\circ\boldsymbol b$ means an element-wise product of two vectors $\boldsymbol a$ and 
+$\boldsymbol b$. 
+
+The plant's age $\boldsymbol d$ is the vector of the numbers of days after transplanting scaled to have the 
+mean of $0$ and standard deviation of $1$. Each element of vector $\boldsymbol n$ indicates a genotype 
+of a smaple. Elements ```coef.age``` and ```coef.genotype``` in ```coefs``` represent regression 
+coefficients of the plant's age and genotype, respectively. 
+
+The circadian clock in sample $j$ is represented by the cosine and sine curves with a $24~\mathrm{hr}$ 
+period as 
+\[
+c^{cos}_j=\frac{\cos\left(2\pi\left(t_j\right)/24\right)}{2},\\
+c^{sin}_j=\frac{\sin\left(2\pi\left(t_j-\varphi\right)/24\right)}{2},
+\]
+where $t_j$ is the time when the sample $j$ was obtained. The regression coefficients of these two 
+curves are ```coef.clock.cos``` and ```coef.clock.sin```, respectively. The linear combination of these 
+two curves is equal to the cosine curve, that is, 
+\[
+\beta_{cos}c^{cos}_j+\beta_{sin}c^{sin}_j=\sqrt{\beta_{cos}^2+\beta_{sin}^2}
+\frac{\cos\left(2\pi t_j-\arg\left(\beta_{cos}+i\beta_{sin}\right)\right)}{2}. 
+\]
+Here, $\arg\left(\beta_{cos}+i\beta_{sin}\right)$ is the gene specific phase of the circadian clock. 
+
+Through training, ```FIT``` selects the best environmental factor to explain the variation of gene expression. 
+The selected environmental factor is represented by the variable ```env``` of the model object. 
+The response to environmental stimuli is the cumulative sum of an environmental stimulus during a given 
+period $p$, that is,
+\[
+r=\sum^t_{T=t-p}g(T)f(w_T-\theta). 
+\]
+Here $g(T)$ is a gate function that represents a diurnal change in a sensitivity to environmental 
+stimuli. $f(\cdot)$ is a response function that characterizes the type of response to stimuli. Parameters $w_T$ and $\theta$ represent the value of a meteorological parameter at time $T$ and 
+the response threshold, respectively. The parameters related to the response are contained in the 
+model object as the variable ```params```. 
+```{r, dependson="chunk-train", eval=TRUE}
+models[[1]]$params
+```
+Here, ```env.temperature.period``` and ```env.temperature.threshold``` are period $p$ and 
+threshold $\theta$, respectively. The term between two "." in the names represents ```env```, 
+that is, which environmental factor the model responds to. For instance, the model in question responds to 
+temperature. 
+
+The gate function is defined as
+\[
+g(T)=
+\frac{
+ \tanh\left(
+  \exp\left(\gamma_g\right)
+  \left(
+   \cos\left(
+    2\pi\left(T-\psi\right)/24
+   \right)
+   -\theta_g
+  \right)
+ \right)
+ -\tanh\left(
+  \exp\left(\gamma_g\right)\left(-1-\theta_g\right)
+ \right)
+}
+{
+ \tanh\left(
+  \exp\left(\gamma_g\right)\left(1-\theta_g\right)
+ \right)
+ -\tanh\left(
+  \exp\left(\gamma_g\right)\left(-1-\theta_g\right)
+ \right)
+}, 
+\]
+where $\psi_g$ determines at what time of day the gene is most sensitive to environmental stimuli, and $\gamma_g$ 
+and $\theta_g$ control the shape and the opening length of the gate, respectively. 
+A smaller value of $\theta_g$ results in longer time of opening of the gate. The shape of this 
+function becomes approximately rectangular with a smaller value of $\gamma_g$ and becomes a cosine curve 
+with a larger value of $\gamma_g$. In ```params```, $\psi_g$, $\gamma_g$, and $\theta_g$ are present as 
+```gate.*.phase```, ```gate.*.amplitude```, and ```gate.*.threshold```, respectively ("*" is an environmental 
+factor). 
+
+We can consider two types of the response functions. One type responds to environmental stimuli if and 
+only if it is greater than the threshold. On the other hand, the other type responds to stimuli smaller 
+than the threshold. These two types of the response functions are defined as
+\[
+ f_{p}(x)=\max\left(0, \tanh\left(\exp\left(\gamma_f\right)x\right)\right)\sqrt{\exp\left(-2\gamma_f\right)+1},\\
+ f_{n}(x)=\max\left(0, \tanh\left(-\exp\left(\gamma_f\right)x\right)\right)\sqrt{\exp\left(-2\gamma_f\right)+1}. 
+\]
+Here, $f_{p}(x)$ is the former type, and $f_{n}(x)$ is the latter type of the response function. The better 
+type of the response function is chosen at the stage of the optimization of the parameters. It $f_{p}(x)$ 
+is chosen, the value of ```response.type``` of the model object is $1$. Otherwise, it is $-1$. As 
+$\gamma_f$ approaches minus infinity, the response approaches a dose-dependent response. Conversely, the 
+response approaches a dose-independent response in the limit $\gamma_f\rightarrow\infty$. Element 
+```params$env.*.amplitude``` represents $\gamma_f$. 
+
+During training, ```FIT``` normalizes the values of meteorological data of each environmental factor to have the
+mean of $0$ and standard deviation of $1$ as the plant's age. The mean values and standard deviations of 
+raw data are held in ```input.mean``` and ```input.sd``` of the model object. 
+
+## Omitting the grid search
+The most time consuming step in ```FIT::train``` is the fixation of initial model parameters by a grid search. 
+To reduce computational time, users can fix initial model parameters by setting them to given values instead of a grid search. 
+For example, we can perform training with a grid search for only a small number of genes and fix the initial model 
+parameters for other genes with trained parameters of a gene that shows the most similar expression 
+patterns. 
+
+An example is shown below. Here, the initial model parameters are set to the parameters of the trained model for 
+Os12g0189300. First, load expression data of example genes. 
+```{r chunk-load2, eval=TRUE}
+genes <- c('Os03g0197000', 'Os01g0892600', 'Os07g0630800', 'Os01g0700100')
+training.expression2 <- FIT::load.expression(train.expression.file, 'ex', genes)
+```
+Training of the model for Os12g0189300 has already been performed above, and the trained model is ```models[[1]]```. 
+The recipe to fix the initial model parameters can be configured as follows: 
+```{r chunk-recipe2, eval=TRUE}
+init.params <- rep(list(models[[1]]$params), 4)
+names(init.params) <- genes
+recipe2 <- FIT::make.recipe(models[[1]]$env, 
+                           init = 'manual',
+                           optim = c('lm'),
+                           fit = 'fit.lasso',
+                           init.data = list(
+                             params = init.params,
+                             response.type = models[[1]]$response.type,
+                             input.mean = models[[1]]$input.mean,
+                             input.sd = models[[1]]$input.sd
+                             ),
+                           time.step = 10)
+```
+
+We can train the model and predict gene expression as is the case above. 
+```{r chunk-example2, fig.height=4, eval=TRUE}
+models2 <- unlist(FIT::train(training.expression2,
+                             training.attribute,
+                             training.weather,
+                             recipe2))
+prediction2 <- FIT::predict(models2, prediction.attribute, prediction.weather)
+
+prediction.expression2 <- FIT::load.expression(prediction.expression.file, 'ex', genes)
+
+for(i in 1:length(prediction2)){
+  plot(prediction2[[i]], prediction.expression2$rawdata[,i], 
+      xlab='prediction', ylab='observation')
+  title(models2[[i]]$gene)
+}
+```
+
+## Application to RNA-Seq data
+```FIT``` assumes that the observed expression conforms to a log-normal distribution to which microarray data can be fitted well. 
+RNA-Seq, which is also a widely-used technology for quantification of the transcriptome, is discrete in nature and modeled by the negative 
+binomial distribution. To apply ```FIT``` to RNA-Seq data, we can use a precision weight method as in voom (@Law2014). 
+```FIT``` contains function ```FIT::load.weight()``` to load the weight matrix. 
+```{r chunk-weight, eval=TRUE}
+rna.seq.file <- system.file('extdata', 'rna-seq', package='FIT')
+weight <- FIT::load.weight(rna.seq.file, 'weights', genes)
+```
+For the detailed procedure of construction of precision weights, see the articles by @Law2014 and @Iwayama2016. 
+
+```FIT``` uses the log-counts per million (log-cpm) values as gene expression data. 
+```{r chunk-load-rna-seq, eval=TRUE}
+training.expression.rnaseq <- FIT::load.expression(rna.seq.file, 'log.cpm', genes)
+```
+
+The recipe can be configured as in the cases above. 
+```{r chunk-recipe-rna-seq, eval=TRUE}
+recipe.rnaseq <- FIT::make.recipe(c('temperature', 'radiation'), 
+                           init = 'gridsearch',
+                           optim = c('lm'),
+                           fit = 'fit.lasso',
+                           init.data = grid.coords,
+                           time.step = 10)
+```
+
+To associate precision weight with expression data, we need to specify the weight object for argument ```weight``` 
+of function ```FIT::train()```. 
+```{r chunk-train-rna-seq, eval=TRUE}
+models.rnaseq <- unlist(FIT::train(training.expression.rnaseq,
+                             training.attribute,
+                             training.weather,
+                             recipe.rnaseq,
+                             weight))
+```
+
+```{r chunk-predict-rna-seq, eval=TRUE}
+prediction.rnaseq <- FIT::predict(models.rnaseq, prediction.attribute, prediction.weather)
+
+for(i in 1:length(prediction.rnaseq)){
+  plot(prediction.rnaseq[[i]], prediction.expression2$rawdata[,i], 
+      xlab='prediction', ylab='observation')
+  title(models.rnaseq[[i]]$gene)
+}
+```
+
+## References
