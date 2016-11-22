@@ -29,7 +29,7 @@ std::unique_ptr<Eigen::MatrixXd> inputVars(std::size_t                 nsamples,
   // env.e.{period,amp,th}, gate.e.{phase,amp,th}
   if (params.size() != (3+3) * env.size())
     throw Rcpp::exception("params.size() and env.size() are inconsistent.");
-
+  
   Rcpp::NumericVector const D  = attribute_data["age"];
   Rcpp::NumericVector const N8 = attribute_data["N8"];
 

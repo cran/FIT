@@ -79,6 +79,7 @@ Rcpp::List initParamsAndDevs(Rcpp::NumericMatrix const   exprs,
 
   std::vector<std::unique_ptr<Es>> es(env_factors.size());
   auto p = es.begin();
+  
   for (auto& e_ : env_factors) {
     auto e = Rcpp::as<std::string>(e_);
     Rcpp::Rcout << "# - E(" + e + ")\n";
@@ -94,7 +95,7 @@ Rcpp::List initParamsAndDevs(Rcpp::NumericMatrix const   exprs,
                         grid_coordinates["gate." + e + ".threshold"],
                         data_step[0], time_step[0]);
   }
-
+  
   Rcpp::Rcout << "# Init (grid search)\n";
   // fix params for e from (D,N8,C,DC,E(e),DE(e)) for a given e
   // XXX: How to fix params for C when an env contains more than one e
@@ -125,6 +126,7 @@ Rcpp::NumericMatrix inputVars(Rcpp::NumericVector const   params,
     throw Rcpp::exception("data_step and time_step are supposed be scalars.");
   std::size_t const nsamples = attribute_data.nrows();
   std::size_t const ninputs = 7 + 2 * env.size(); // 1,D,N8,C.cos,C.sin,DC.cos,DC.sin,E(e),DE(e)
+  
   std::unique_ptr<Eigen::MatrixXd> p = optim::inputVars(nsamples, ninputs, params, env,
                                                         attribute_data, weather_data,
                                                         data_step[0], time_step[0]);
@@ -142,8 +144,10 @@ Rcpp::NumericVector devLm(Rcpp::NumericVector const   params,
                           Rcpp::IntegerVector const   time_step) {
   if (data_step.size() != 1 || time_step.size() != 1)
     throw Rcpp::exception("data_step and time_step are supposed be scalars.");
+  
   std::size_t const nsamples = expr.size();
   std::size_t const ninputs = 7 + 2 * env.size(); // 1,D,N8,C.cos,C.sin,DC.cos,DC.sin,E(e),DE(e)
+  
   std::unique_ptr<Eigen::MatrixXd> p = optim::inputVars(nsamples, ninputs, params, env,
                                                         attribute_data, weather_data,
                                                         data_step[0], time_step[0]);
@@ -155,10 +159,11 @@ Rcpp::NumericVector devLm(Rcpp::NumericVector const   params,
 
   b = (X.transpose() * w.asDiagonal() * X).ldlt()
     .solve(X.transpose() * w.cwiseProduct(y));
+  
   double dev = (y - X * b).cwiseAbs2().dot(w);
   // b = (X.transpose() * X).ldlt().solve(X.transpose() * y);
   // double dev = (y - X * b).squaredNorm();
-
+  
   return Rcpp::wrap(dev);
 }
 

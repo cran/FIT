@@ -192,8 +192,8 @@ Model$normalize.weather <- function(weather.data, env, response.type, weather.me
 }
 
 # Upper and lower bounds of parameters:
-Model$param.bounds <- function(env, attribute.data, weather.data){
-  period.max <- min(attribute.data$times.pickup)-1
+Model$param.bounds <- function(env, attribute.data, weather.data, data.step){
+  period.max <- min(attribute.data$times.pickup) -1
   env.n <- length(env)
 
   threshold.bound <- sapply(env, function(e)

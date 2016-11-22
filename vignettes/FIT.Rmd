@@ -55,6 +55,11 @@ FIT can be easily installed from CRAN by typing the following command in an R se
 install.packages('FIT')
 ```
 
+To install on Windows, the ```INSTALL_opts``` option is required as follows:
+```{r, eval=FALSE}
+install.packages("FIT", INSTALL_opts = "--no-multiarch")
+```
+
 ## Getting Started
 To load the FIT package, enter the following command in an R session:
 ```{r chunk-load, eval=TRUE}

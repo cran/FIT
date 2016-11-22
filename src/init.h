@@ -31,7 +31,7 @@ Rcpp::List gridSearch(Rcpp::NumericMatrix const& exprs,
   std::size_t const nsamples = exprs.nrow();
   std::size_t const nparams = 6; // env.e.*, gate.e.*
   std::size_t const ninputs = 9; // 1,D,N8,C.cos,C.sin,D*C.cos,D*C.sin,E(e),D*E(e)
-
+  
   // penalty given by W*(Y-XB)^2
   // - for each gene, w*(y-Xb)^2 wehre w and y are vecs of length nsamples
   Eigen::Map<Eigen::MatrixXd> const Y(REAL(exprs), nsamples, ngenes);
@@ -42,7 +42,7 @@ Rcpp::List gridSearch(Rcpp::NumericMatrix const& exprs,
 
   Rcpp::NumericMatrix               best_params(nparams, ngenes);
   Rcpp::NumericVector               best_devs(ngenes, -1); // deviance is never negative
-
+  
   double* x = X.data();
   for (std::size_t i = 0; i < nsamples; ++i, ++x) *x = 1;                       // 1
   for (auto u = D.begin();  u != D.end();  ++u, ++x) *x = *u;                   // D
@@ -68,6 +68,7 @@ Rcpp::List gridSearch(Rcpp::NumericMatrix const& exprs,
       B.col(g) = (X.transpose() * w.asDiagonal() * X).ldlt()
         .solve(X.transpose() * w.cwiseProduct(Y.col(g)));
     }
+    
     dev = (Y - X * B).cwiseAbs2().cwiseProduct(W).colwise().sum();
     // B = (X.transpose() * X).ldlt().solve(X.transpose() * Y);
     // dev = (Y - X * B).colwise().squaredNorm();
@@ -75,7 +76,7 @@ Rcpp::List gridSearch(Rcpp::NumericMatrix const& exprs,
     double* q = dev.data();
     auto bd = best_devs.begin();
     auto bp = best_params.begin();
-    for (std::size_t i = 0; i < ngenes; ++i, ++q, ++bd, bp += nparams)
+    for (std::size_t i = 0; i < ngenes; ++i, ++q, ++bd, bp += nparams){
       if (!Rcpp::NumericVector::is_na(*q) && (*q < *bd || *bd < 0)) {
         *bd = *q;
         auto params = e0.coord();
@@ -88,6 +89,7 @@ Rcpp::List gridSearch(Rcpp::NumericMatrix const& exprs,
         *(bp + 4) = std::get<0>(params); // gate.e.amplitude
         *(bp + 5) = std::get<1>(params); // gate.e.threshold
       }
+    }
   }
 
   Rcpp::List dimnames = exprs.attr("dimnames");

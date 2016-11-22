@@ -51,12 +51,12 @@ Train$init.manual <- function(exprs, weights, attribute.data, weather.data, envs
   }
   
   if(is.null(init.data$input.mean)){
-    manual.input.mean <- c(age=mean(attribute.data$age), sapply(envs, function(e) mean(weather.data[[e]])))
+    manual.input.mean <- c(age=mean(attribute.data$age, na.rm=T), sapply(envs, function(e) mean(weather.data[[e]], na.rm=T)))
   }else{
     manual.input.mean <- init.data$input.mean
   }
   if(is.null(init.data$input.sd)){
-    manual.input.sd <- c(age=sd(attribute.data$age), sapply(envs, function(e) sd(weather.data[[e]])))
+    manual.input.sd <- c(age=sd(attribute.data$age, na.rm=T), sapply(envs, function(e) sd(weather.data[[e]], na.rm=T)))
   }else{
     manual.input.sd <- init.data$input.sd
   }
@@ -91,10 +91,12 @@ Train$init.manual <- function(exprs, weights, attribute.data, weather.data, envs
 Train$init.gridsearch <- function(exprs, weights, attribute.data, weather.data, envs, init.data, genes, data.step, time.step) {
   grid.coords <- init.data
 
-  age.mean <- mean(attribute.data$age)
-  age.sd <- sd(attribute.data$age)
-  weather.mean <- sapply(envs, function(e) mean(weather.data[[e]]))
-  weather.sd <- sapply(envs, function(e) sd(weather.data[[e]]))
+  age.mean <- mean(attribute.data$age, na.rm=T)
+  age.sd <- sd(attribute.data$age, na.rm=T)
+  if(age.sd == 0) age.sd <- 1
+  weather.mean <- sapply(envs, function(e) mean(weather.data[[e]], na.rm=T))
+  weather.sd <- sapply(envs, function(e) sd(weather.data[[e]], na.rm=T))
+  weather.sd[weather.sd==0] <- 1
   input.mean <- c(age=age.mean, weather.mean)
   input.sd <- c(age=age.sd, weather.sd)
   
@@ -315,13 +317,14 @@ Train$initParamsAndDevs <- function(exprs, weights, attribute.data, weather.data
 
 Train$doOptim <- function(params, fn, env, expr, weight, attribute.data, weather.data,
                           data.step, time.step, maxit) {
-  param.bounds <- Model$param.bounds(env, attribute.data, weather.data)
+  param.bounds <- Model$param.bounds(env, attribute.data, weather.data, data.step)
   bounds.name <- colnames(param.bounds)
   params[bounds.name] <- pmin(pmax(params[bounds.name], param.bounds[1, bounds.name]), param.bounds[2, bounds.name])
   params.period.log <- Model$period.log(params, env)
   
   fn.bounded <- function(params, env, expr, weight, attribute.data, weather.data, data.step, time.step, param.bounds){
     params.inv <- Model$period.log.inv(params, env)
+print(params)
     if(
       prod(vapply(colnames(param.bounds), function(bound.name){
         param.bounds[1,bound.name] <= params.inv[bound.name] & params.inv[bound.name] < param.bounds[2,bound.name]
@@ -368,14 +371,16 @@ Train$fitLasso <- function(params, env, expr, weight, attribute.data, weather.da
   deg.freedom <- sapply(unique(group.index), 
                         function(gi) sqrt(sum(group.index==gi)) + sum(Model$coef.deg.freedom(env)[-1][group.index==gi]-1))
   
-  inputs.weighted.sd <- apply(inputs.weighted, 2, sd)
-  inputs.weighted.sd[inputs.weighted.sd==0] <- 1
-  inputs.weighted.norm <- apply(inputs.weighted, 2, function(a) a - mean(a)) / matrix(inputs.weighted.sd, nrow(inputs.weighted), ncol(inputs.weighted), byrow=T)
-  beta.ols <- lm(expr.weighted~inputs.weighted.norm)$coefficients[-1]
+#  inputs.weighted.sd <- apply(inputs.weighted, 2, sd)
+#  inputs.weighted.sd[inputs.weighted.sd==0] <- 1
+#  inputs.weighted.norm <- apply(inputs.weighted, 2, function(a) a - mean(a)) / matrix(inputs.weighted.sd, nrow(inputs.weighted), ncol(inputs.weighted), byrow=T)
+#  beta.ols <- lm(expr.weighted~inputs.weighted.norm)$coefficients[-1]
+  beta.ols <- lm(expr~inputs, weights = weight)$coefficients[-1]
   beta.ols[is.na(beta.ols) | beta.ols==0] <- 1e-5
   multiplier <- deg.freedom / sapply(unique(group.index), function(gi) sqrt(sum(beta.ols[group.index==gi]^2))^2)
   
-  fit <- gglasso::gglasso(inputs.weighted.norm, expr.weighted, group=group.index, pf=multiplier)
+#  fit <- gglasso::gglasso(inputs.weighted.norm, expr.weighted, group=group.index, pf=multiplier)
+  fit <- gglasso::gglasso(inputs.weighted, expr.weighted, group=group.index, pf=multiplier)
   coefficients <- fit$beta
   intercepts <- mean(expr) - colMeans(inputs)%*%coefficients
   

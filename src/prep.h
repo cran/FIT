@@ -65,7 +65,6 @@ compFs_(Rcpp::NumericVector::const_iterator const& weather_begin,
   std::size_t const blocksize = weather_end - weather_begin;
   std::unique_ptr<grid::Grid<double, double,double>> fs
   { new grid::Grid<double, double,double>(blocksize, amplitude, threshold) };
-
   auto f0 = fs->begin();
   for (auto& amp : amplitude)
     for (auto& th : threshold) {
@@ -166,7 +165,6 @@ std::unique_ptr<Es> compEs_(bool show_progress,
   std::vector<double> const& gate_amp = std::get<0>(gs.coords);
   std::vector<double> const& gate_th  = std::get<1>(gs.coords);
   if (show_progress) Rcpp::Rcout << "- nsamples(blocksize): " << nsamples << '\n';
-
   // this ordering of coords comes from performance considerations
   std::unique_ptr<Es> es
   { new Es(nsamples, std::tie(gate_amp, gate_th, phase, env_amp, env_th, period)) };
@@ -247,7 +245,7 @@ std::unique_ptr<Es> makeEs_(bool show_progress,
 
   // ensure that enough weather data has been passed
   if (pickup_min < period_max || pickup_max < pickup_min ||
-      weather_e_data.size() < pickup_max)
+      weather_e_data.size()*dataStep < pickup_max)
     throw Rcpp::exception("Inconsistent args. (weather data too short?)");
   // timeStep must be an integral multiple of dataStep
   if (timeStep % dataStep != 0)
@@ -262,19 +260,18 @@ std::unique_ptr<Es> makeEs_(bool show_progress,
     Rcpp::Rcout << "# - weather_begin: " << pickup_min - period_max
           << " weather_end: " << pickup_max << '\n';
   }
-  int const weather_begin_offset = pickup_min - period_max;
-  int const weather_end_offset = pickup_max;
+  int const weather_begin_offset = (pickup_min - period_max) / dataStep;
+  int const weather_end_offset = pickup_max / dataStep;
   auto fs = compFs_(weather_e_data.begin() + weather_begin_offset,
                     weather_e_data.begin() + weather_end_offset,
                     env_e_amplitude, env_e_threshold);
-
   if (show_progress) Rcpp::Rcout << "# computing Gs..\n";
   auto gs = compGs_(gate_e_amplitude, gate_e_threshold);
 
   if (show_progress) Rcpp::Rcout << "# computing Es..\n";
   // convert times_pickup to offsets in fs
   auto times_pickup_ = Rcpp::as<std::vector<int>>(times_pickup);
-  for (auto& t : times_pickup_) t -= weather_begin_offset;
+  for (auto& t : times_pickup_) t -= weather_begin_offset * dataStep;
   auto es = compEs_(show_progress,
                     times_pickup_, times_of_day, *fs, *gs, gate_e_phase, period_e,
                     dataStep, timeStep);
