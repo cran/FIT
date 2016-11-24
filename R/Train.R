@@ -324,7 +324,6 @@ Train$doOptim <- function(params, fn, env, expr, weight, attribute.data, weather
   
   fn.bounded <- function(params, env, expr, weight, attribute.data, weather.data, data.step, time.step, param.bounds){
     params.inv <- Model$period.log.inv(params, env)
-print(params)
     if(
       prod(vapply(colnames(param.bounds), function(bound.name){
         param.bounds[1,bound.name] <= params.inv[bound.name] & params.inv[bound.name] < param.bounds[2,bound.name]

@@ -271,7 +271,7 @@ std::unique_ptr<Es> makeEs_(bool show_progress,
   if (show_progress) Rcpp::Rcout << "# computing Es..\n";
   // convert times_pickup to offsets in fs
   auto times_pickup_ = Rcpp::as<std::vector<int>>(times_pickup);
-  for (auto& t : times_pickup_) t -= weather_begin_offset * dataStep;
+  for (auto& t : times_pickup_) t = (floor(t/dataStep) - weather_begin_offset) * dataStep;
   auto es = compEs_(show_progress,
                     times_pickup_, times_of_day, *fs, *gs, gate_e_phase, period_e,
                     dataStep, timeStep);

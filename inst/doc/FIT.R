@@ -24,8 +24,8 @@ grid.coords <- list(
   env.temperature.amplitude = c(-100/30, -1/30, 1/30, 100/30),
   env.radiation.threshold = c(1, 10, 20, 30, 40),
   env.radiation.amplitude = c(-100/80, -1/80, 1/80, 100/80),  
-  env.temperature.period = c(1, 3, 9, 27, 72, 144, 144*3),
-  env.radiation.period = c(1, 3, 9, 27, 72, 144, 144*3),
+  env.temperature.period = c(10, 30, 90, 270, 720, 1440, 1440*3),
+  env.radiation.period = c(10, 30, 90, 270, 720, 1440, 1440*3),
   gate.temperature.phase = seq(0, 23*60, 1*60),
   gate.radiation.phase = seq(0, 23*60, 1*60),
   gate.temperature.threshold = cos(pi*seq(4,24,4)/24),
@@ -77,10 +77,10 @@ for(i in 1:length(prediction)){
   title(models[[i]]$gene)
 }
 
-## ---- dependson="chunk-train", eval=TRUE---------------------------------
+## ---- eval=TRUE----------------------------------------------------------
 models[[1]]$coefs
 
-## ---- dependson="chunk-train", eval=TRUE---------------------------------
+## ---- eval=TRUE----------------------------------------------------------
 models[[1]]$params
 
 ## ----chunk-load2, eval=TRUE----------------------------------------------
