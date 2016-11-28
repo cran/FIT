@@ -1,6 +1,6 @@
-2b61858ddcd9481f9724e78756f0f298 *DESCRIPTION
+b1f8796e341c043e4d70b7fee6ee717b *DESCRIPTION
 87ce3d811cc61e496f9f2ce05c4bef59 *LICENSE
-43f89026417e8c1d1e2a6edeccff767f *NAMESPACE
+3fc4b993b5907a66cba28401f2b51a1d *NAMESPACE
 78fcd4dad44a597c600de64545d1f359 *R/FIT.R
 bf80679550f8a3df3d93a9c4be7d38c5 *R/IO.R
 adfc28b71a464a4c1b8af9d78d8f1e08 *R/JmaCsv.R
@@ -10,7 +10,7 @@ adfc28b71a464a4c1b8af9d78d8f1e08 *R/JmaCsv.R
 bcac7f302fe4017194386bc0d0d4d0f9 *R/Norm.R
 559d5512081fcf2b50faaa91a70f3a19 *R/RcppExports.R
 c1e263af44857ea93c8437f9850ca05e *R/Train.R
-2dc2fb3a7efa3428c79316fcd12d49e0 *build/vignette.rds
+117189ba8e6f7668cb31bfd68310f5ae *build/vignette.rds
 a731cc123a5d42655a449f94098a8cae *inst/doc/FIT.R
 3b7f87fc272a51bbe884a6ac24d27c1f *inst/doc/FIT.Rmd
 1cb8d282f249b34386f4d509109d0f14 *inst/doc/FIT.html
@@ -36,12 +36,14 @@ f248d2180b810e9aa89ce9c548e0b6d6 *man/prediction.errors.Rd
 42c662fae67658666a0cf7f52886e0e5 *man/train.Rd
 86022ced2e9252915506df71c5f67f2a *man/train.to.predict.adaptor.Rd
 8310e792edbf38c6969f559256a157cf *man/weather.entries.Rd
+e3d3cb360fbfdb3c6974e14eb5f09870 *src/Makevars
+e3d3cb360fbfdb3c6974e14eb5f09870 *src/Makevars.win
 a74377d93da19376649f3e40b959f08b *src/RcppExports.cpp
 73564ec3fe9eedede405a19aedb97a81 *src/grid.h
 a62e5aa62a89cd12577ce4402b6862da *src/init.h
 5258a67181e305e3f06de7b5c524f650 *src/model.h
 c2e6ecbc890c71bc44d3effe13b7b651 *src/optim.h
-79ef0352a1d77a5177b66dea3fd3ae75 *src/prep.h
+6d3b1f6fb5f8c44763d147bf494c5cef *src/prep.h
 4e2f1a29a9763c5d5509e8aa134f2a1c *src/train.cpp
 3b7f87fc272a51bbe884a6ac24d27c1f *vignettes/FIT.Rmd
 d2130f497415e14a404b36c0b56e3ac6 *vignettes/bibliography.bib
