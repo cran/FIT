@@ -4,7 +4,8 @@
 \alias{make.recipe}
 \title{Creates a recipe for training models.}
 \usage{
-make.recipe(envs, init, optim, fit, init.data, time.step, opts = NULL)
+make.recipe(envs, init, optim, fit, init.data, time.step, gate.open.min = 0,
+  opts = NULL)
 }
 \arguments{
 \item{envs}{An array of weather factors to be taken into account
@@ -35,6 +36,9 @@ the Optim stage.}
 \item{time.step}{An integer to specify the basic unit of time (in minute)
 for the transcriptomic models.
 Must be a multiple of the time step of weather data.}
+
+\item{gate.open.min}{The minimum opning length in minutes of the gate function for 
+environmental inputs.}
 
 \item{opts}{An optional named list that specifies the arguments to be passed
     to methods that constitute each stage of the model training.
@@ -69,4 +73,3 @@ recipe <- FIT::make.recipe(c('wind', 'temperature'),
 }
 
 }
-

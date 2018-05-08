@@ -51,4 +51,3 @@ Computes the prediction errors using the trained models.
 # see the usage of FIT::predict()
 }
 }
-

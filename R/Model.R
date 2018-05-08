@@ -11,17 +11,17 @@
 #
 #   log2(expression) = Norm(mu, sigma^2)
 #
-# where mu = a + b1*D + c*N8 + b2*C + b3*D*C + b4*E + b5*D*E
+# where mu = a + b1*D + c*type + b2*C + b3*D*C + b4*E + b5*D*E
 # and (a,b1,..,b5,c) are some regression parameters.
 #
 # (C,D,E,..) represent effects of environmental factors
-# (ages of samples, time of the day etc.) and N8 takes into account
+# (ages of samples, time of the day etc.) and type takes into account
 # the effect of gene types. See FIT.pdf for the details.
 #
 # Various parameters carry the following indices:
 #   mu_{i,s}: expression of gene i in the sample s (training data)
 #   a_{i}           (s independent intercept)
-#   c_{i} * N8_{i}
+#   c_{i} * type_{i}
 #   b1_{i} * D_{s}
 #   b2_{i} * C_{i,s}
 #   b3_{i} * D_{s} * C_{i,s}
@@ -44,7 +44,8 @@ Model$Recipe <- setRefClass(
     optim     = 'character', # (none | lm | lasso)+
     fit       = 'character', # (fit.lm | fit.lasso)
     init.data = 'list',      # init=gridsearch => grid.params | init=manual => init.params
-    time.step = 'integer',
+    time.step = 'integer', 
+    gate.open.min = 'numeric', 
     opts      = 'list'
     )
   )
@@ -118,7 +119,7 @@ Model$LogNormal <- setRefClass(
 
     # predict gene expression using attributes and meteorological data
     predict = function(attribute.data, weather.data, data.step) {
-      # normally, mu = (1,D,N8,C,E,..)*(optimized regression coefs)
+      # normally, mu = (1,D,type,C,E,..)*(optimized regression coefs)
       # but inputs are NA when env == 'unexpressed' and
       # we return the value of the first coef (intercept) as mu
       mu <- if (env == 'unexpressed')
@@ -166,7 +167,7 @@ Model$param.names <- function(env) {
 Model$coef.names <- function(env) {
   c('intercept',                      # 1
     'coef.age',                       # D
-    'coef.genotype',                  # N8
+    'coef.genotype',                  # N
     'coef.clock.cos',                 # C
     'coef.clock.sin',                 # C
     'coef.ageClock.cos',              # D*C
@@ -192,7 +193,7 @@ Model$normalize.weather <- function(weather.data, env, response.type, weather.me
 }
 
 # Upper and lower bounds of parameters:
-Model$param.bounds <- function(env, attribute.data, weather.data, data.step){
+Model$param.bounds <- function(env, attribute.data, weather.data, data.step, gate.threshold.max=1){
   period.max <- min(attribute.data$times.pickup) -1
   env.n <- length(env)
 
@@ -205,7 +206,7 @@ Model$param.bounds <- function(env, attribute.data, weather.data, data.step){
     matrix(c(1, period.max), 2, env.n, dimnames = list(NULL, sprintf('env.%s.period', env))),
     threshold.bound,
     matrix(c(0, 1440), 2, env.n, dimnames = list(NULL, sprintf('gate.%s.phase', env))),
-    matrix(c(-1, 1), 2, env.n, dimnames = list(NULL, sprintf('gate.%s.threshold', env)))
+    matrix(c(-1, gate.threshold.max), 2, env.n, dimnames = list(NULL, sprintf('gate.%s.threshold', env)))
   )
 }
 

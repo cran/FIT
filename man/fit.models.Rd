@@ -52,4 +52,3 @@ A collection of models whose parameters and regression coeffients
 Note: use \code{train()} unless the user is willing to
 accept breaking API changes in the future.
 }
-

@@ -28,4 +28,3 @@ An object that reprents the timeseries data of weather factors.
 \description{
 Loads weather data.
 }
-

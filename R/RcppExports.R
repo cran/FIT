@@ -2,22 +2,22 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 initParamsAndDevs <- function(exprs, weights, attribute_data, weather_data, env_factors, grid_coordinates, data_step, time_step) {
-    .Call('FIT_initParamsAndDevs', PACKAGE = 'FIT', exprs, weights, attribute_data, weather_data, env_factors, grid_coordinates, data_step, time_step)
+    .Call('_FIT_initParamsAndDevs', PACKAGE = 'FIT', exprs, weights, attribute_data, weather_data, env_factors, grid_coordinates, data_step, time_step)
 }
 
 inputVars <- function(params, env, attribute_data, weather_data, data_step, time_step) {
-    .Call('FIT_inputVars', PACKAGE = 'FIT', params, env, attribute_data, weather_data, data_step, time_step)
+    .Call('_FIT_inputVars', PACKAGE = 'FIT', params, env, attribute_data, weather_data, data_step, time_step)
 }
 
 devLm <- function(params, env, expr, weight, attribute_data, weather_data, data_step, time_step) {
-    .Call('FIT_devLm', PACKAGE = 'FIT', params, env, expr, weight, attribute_data, weather_data, data_step, time_step)
+    .Call('_FIT_devLm', PACKAGE = 'FIT', params, env, expr, weight, attribute_data, weather_data, data_step, time_step)
 }
 
 coefsLm <- function(params, env, expr, weight, attribute_data, weather_data, data_step, time_step) {
-    .Call('FIT_coefsLm', PACKAGE = 'FIT', params, env, expr, weight, attribute_data, weather_data, data_step, time_step)
+    .Call('_FIT_coefsLm', PACKAGE = 'FIT', params, env, expr, weight, attribute_data, weather_data, data_step, time_step)
 }
 
 zzzRcppExportBug <- function() {
-    .Call('FIT_zzzRcppExportBug', PACKAGE = 'FIT')
+    .Call('_FIT_zzzRcppExportBug', PACKAGE = 'FIT')
 }
 

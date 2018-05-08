@@ -12,13 +12,6 @@ weather.entries
 Supported weather factors.
 }
 \examples{
-\dontrun{
-> length(FIT::weather.entries)
-[1] 6
-> FIT::weather.entries
-[1] "wind"          "temperature"   "humidity"      "atmosphere"
-[5] "precipitation" "radiation"
-}
+length(FIT::weather.entries)
 }
 \keyword{datasets}
-

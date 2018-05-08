@@ -51,7 +51,7 @@ IO$slurp <- function(file, variable = NULL) {
 # $min        : int [1:461] 1 1 1 1 1 1 1 1 1 1 ...
 # $age        : int [1:461] 68 68 61 61 54 54 47 47 68 68 ...
 # $file       : chr [1:461] "izawa24hr" "izawa24hr" "izawa24hr" "izawa24hr" ...
-# $N8         : int [1:461] 1 1 1 1 1 1 1 1 1 1 ...
+# $type       : int [1:461] 1 1 1 1 1 1 1 1 1 1 ...
 #
 # secondaries:
 # $date       : POSIXct[1:461], format: "2008-08-12 07:00:00" "2008-08-12 07:00:00" ...
@@ -65,15 +65,16 @@ IO$Attribute <- setRefClass(
 
   fields = list(
     data      = 'data.frame', # data
+    startDate = 'POSIXct',    
     entries   = 'character'   # entries
   ),
 
   methods = list(
-    initialize = function(file, variable = NULL, sample = NULL) {
-      cat('# Reading attribute data..')
-      entries <<- c('age', 'N8')
+    initialize = function(file.data, sample = NULL) {
+      cat('# Preparing attribute data..')
 
-      file.data <- IO$slurp(file, variable)
+      entries <<- c('age', 'type')
+
       if (!is.null(sample)) file.data <- file.data[, sample, drop = FALSE]
 
       d <- file.data[, c('year', 'month', 'day', 'hour', 'min')]
@@ -89,6 +90,14 @@ IO$Attribute <- setRefClass(
 
       data <<- data.frame(times.of.day=times.of.day, times.pickup=times.pickup,
                           file.data, age.norm=age.norm)
+      
+      start <- d[1,]
+      startDate <<- as.POSIXct(
+        strptime(sprintf('%d/%d/%d', start[[1]], start[[2]], start[[3]]),
+                 '%Y/%m/%d') +
+          start[[4]] * 3600 + (start[[5]] - file.data$time[[1]]) * 60,
+        origin = '1970-1-1')
+      
       cat('done.\n')
     }
   )
@@ -103,13 +112,6 @@ IO$Attribute <- setRefClass(
 # file.data slurped from file.weather.2008
 # 'data.frame':	264960 obs. of  13 variables:
 # $time         : num  1 2 3 4 5 6 7 8 9 10 ...
-# $no           : num  1 2 3 4 5 6 7 8 9 10 ...
-# $year         : int  2008 2008 2008 2008 2008 2008 2008 2008 2008 2008 ...
-# $month        : int  5 5 5 5 5 5 5 5 5 5 ...
-# $day          : int  1 1 1 1 1 1 1 1 1 1 ...
-# $hour         : int  0 0 0 0 0 0 0 0 0 0 ...
-# $min          : int  1 2 3 4 5 6 7 8 9 10 ...
-#
 # $wind         : num  2.1 2.3 2.1 2.6 2.8 2.8 2.6 2.3 1.9 2.1 ...
 # $temperature  : num  14.5 14.4 14.4 14.7 14.7 14.4 14.7 14.8 14.6 14.5 ...
 # $humidity     : num  90 90 90 91 91 90 91 91 90 90 ...
@@ -117,8 +119,6 @@ IO$Attribute <- setRefClass(
 # $precipitation: num  0 0 0 0 0 0 0 0 0 0 ...
 # $radiation    : num  0 0 0 0 0 0 0 0 0 0 ...
 # secondaries:
-# $date         : POSIXct[1:264960], format: "2008-05-01 00:01:00" "2008-05-01 00:02:00" ...
-# $times.of.day  : num [1:264960] 1 2 3 4 5 6 7 8 9 10 ...
 IO$weather.entries <- c('wind', 'temperature', 'humidity',
                         'atmosphere', 'precipitation', 'radiation')
 
@@ -127,31 +127,21 @@ IO$Weather <- setRefClass(
 
   fields = list(
     data      = 'data.frame',
-    startDate = 'POSIXct',    
     entries   = 'character',  
     data.step = 'integer'     # sampling interval
   ),
 
   methods = list(
-    initialize = function(file, variable = NULL, entries = IO$weather.entries) {
-      cat('# Reading weather data..')
-      file.data <- IO$slurp(file, variable)
+    initialize = function(file.data, entries = IO$weather.entries) {
+      cat('# Preparing weather data..')
+      
       entries <<- entries
       # DOC: file.data should have at least two rows
       data.step <<- as.integer(file.data$time[[2]] - file.data$time[[1]])
 
-      # here, as opposed to the attribute data, min ranges from 0 to 59..
-      d <- file.data[, c('year', 'month', 'day', 'hour', 'min')]
-      times.of.day <- (d$hour * 60 + d$min) %% 1440
-
       file.data <- file.data[, entries, drop = FALSE]
-      data <<- data.frame(file.data, times.of.day=times.of.day)
-      start <- d[1,]
-      startDate <<- as.POSIXct(
-        strptime(sprintf('%d/%d/%d', start[[1]], start[[2]], start[[3]]),
-                 '%Y/%m/%d') +
-          start[[4]] * 3600 + (start[[5]] - 1) * 60,
-        origin = '1970-1-1')
+      data <<- data.frame(file.data)
+
       cat('done.\n')
     }
   )
@@ -167,9 +157,10 @@ IO$Expression <- setRefClass(
   ),
 
   methods = list(
-    initialize = function(file, variable, entries = NULL) {
-      cat('# Reading expression data..')
-      rawdata <<- IO$slurp(file, variable)
+    initialize = function(data, entries = NULL) {
+      cat('# Preparing expression data..')
+
+      rawdata <<- data
       if (!is.null(entries)) rawdata <<- rawdata[, entries, drop = FALSE]
       entries <<- colnames(rawdata)
       cat('done.\n')
@@ -187,9 +178,10 @@ IO$Weights <- setRefClass(
   ),
 
   methods = list(
-    initialize = function(file, variable, entries = NULL) {
-      cat('# Reading weight data..')
-      rawdata <<- IO$slurp(file, variable)
+    initialize = function(data, entries = NULL) {
+      cat('# Preparing weight data..')
+      
+      rawdata <<- data
       if (!is.null(entries)) rawdata <<- rawdata[, entries, drop = FALSE]
       entries <<- colnames(rawdata)
       cat('done.\n')

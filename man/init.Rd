@@ -49,4 +49,3 @@ A collection of models whose parameters are
 Note: use \code{train()} unless the user is willing to
 accept breaking API changes in the future.
 }
-

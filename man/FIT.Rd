@@ -8,7 +8,10 @@
 \description{
 Provides functionality for constructing statistical models of transcriptomic dynamics in field 
 conditions. It further offers the function to predict expression of a gene given the attributes 
-of samples and meteorological data.
+of samples and meteorological data. Nagano, A. J., Sato, Y., Mihara, M., Antonio, B. A., 
+Motoyama, R., Itoh, H., Naganuma, Y., and Izawa, T. (2012). <doi:10.1016/j.cell.2012.10.048>. 
+Iwayama, K., Aisaka, Y., Kutsuna, N., and Nagano, A. J. (2017). 
+<doi:10.1093/bioinformatics/btx049>.
 }
 \section{Overview}{
 
@@ -155,15 +158,11 @@ a namaspace qualifier (e.g.~\code{FIT::optim()})
 rather than loading \emph{and} attaching it via \code{library('FIT')}.
 }
 
-\section{Sample training and prediction data}{
-
-XXX See \code{extdata}.
-}
-
 \section{Basic usage}{
 
 See vignettes for examples of actual scripts that use \pkg{FIT}.
 }
+
 \examples{
 \dontrun{
 # The following snippet shows the structure of a typical
@@ -179,23 +178,6 @@ grid.coords <- list(
   # :
   gate.radiation.amplitude = c(-5, 5)
 )
-}
-\dontshow{
-grid.coords <- list(
-  env.temperature.threshold = c(10, 30),
-  env.temperature.amplitude = c(-100/30, 100/30),
-  env.radiation.threshold = c(1, 40),
-  env.radiation.amplitude = c(-100/80, 100/80),  
-  env.temperature.period = c(1, 1440),
-  env.radiation.period = c(1, 1440),
-  gate.temperature.phase = seq(0, 23*60, 8*60),
-  gate.radiation.phase = seq(0, 23*60, 8*60),
-  gate.temperature.threshold = cos(pi*seq(8,24,8)/24),
-  gate.radiation.threshold = cos(pi*seq(8,24,8)/24),
-  gate.temperature.amplitude = c(-5, 5),
-  gate.radiation.amplitude = c(-5, 5)
-)
-}
 
 ## create a training recipe
 recipe <- FIT::make.recipe(c('temperature', 'radiation'),
@@ -212,36 +194,22 @@ recipe <- FIT::make.recipe(c('temperature', 'radiation'),
 ## names of genes to construct models
 genes <- c('Os12g0189300', 'Os02g0724000')
 
-\dontshow{
-training.attribute   <- FIT::load.attribute(
-                       system.file('extdata', 'train.attribute', package='FIT')
-                     )
-training.weather     <- FIT::load.weather(
-                       system.file('extdata', 'train.weather', package='FIT'),
-                       'weather', 
-                       c('temperature', 'radiation')
-                     )
-training.expression  <- FIT::load.expression(
-                       system.file('extdata', 'train.expression', package='FIT'),
-                       'ex',
-                       genes
-                     )
-training.attribute$data <- training.attribute$data[1:50,]
-training.expression$rawdata <- training.expression$rawdata[1:50,]
 }
+
 
 \dontrun{
 ## load training data
 training.attribute  <- FIT::load.attribute('attribute.2008.txt')
 training.weather    <- FIT::load.weather('weather.2008.dat', 'weather')
 training.expression <- FIT::load.expression('expression.2008.dat', 'ex', genes)
-}
 
 ## models will be a list of trained models (length: ngenes)
 models <- FIT::train(training.expression,
                      training.attribute,
                      training.weather,
                      recipe)
+
+}
 
 ################
 ## prediction ##
@@ -252,23 +220,14 @@ models <- FIT::train(training.expression,
 prediction.attribute  <- FIT::load.attribute('attribute.2009.txt');
 prediction.weather    <- FIT::load.weather('weather.2009.dat', 'weather')
 prediction.expression <- FIT::load.expression('expression.2009.dat', 'ex', genes)
-}
-
-\dontshow{
-prediction.attribute   <- FIT::load.attribute(
-                       system.file('extdata', 'prediction.attribute', package='FIT')
-                     )
-prediction.weather     <- FIT::load.weather(
-                       system.file('extdata', 'prediction.weather', package='FIT'),
-                       'weather', 
-                       c('temperature', 'radiation')
-                     )
-}
 
 ## predict
 prediction.result <- FIT::predict(models[[1]],
                                  prediction.attribute,
                                  prediction.weather)
+
+
+}
 
 }
 \references{
@@ -278,6 +237,5 @@ Cell~151, 6, 1358--69 (2012)
 
 [Iwayama] K.~Iwayama, et al. 
 ``FIT: statistical modeling tool for transcriptome dynamics under fluctuating field conditions,''
-(in preparation)
+Bioinformatics, btx049 (2017)
 }
-

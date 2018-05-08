@@ -28,4 +28,3 @@ An object that represents the weights
 \description{
 Loads regression weight data.
 }
-

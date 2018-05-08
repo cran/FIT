@@ -152,7 +152,7 @@ Train$optim.default.opts <- list(
 
 Train$optim <- function(exprs, weights, attribute.data, weather.data, models, method,
                         data.step, time.step, maxit = NULL, nfolds = NULL,
-                        min.expressed.rate = 0.01) {
+                        min.expressed.rate = 0.01, gate.open.min=0) {
   if      (tolower(method) == 'none')   { cat('# *** (none)\n'); return(models) }
   else if (tolower(method) == 'lm')     { cat('# *** Lm:\n');   method <- 'lm' }
   else if (tolower(method) == 'lasso')  { cat('# *** Lasso:\n'); method <- 'lasso' }
@@ -188,6 +188,9 @@ Train$optim <- function(exprs, weights, attribute.data, weather.data, models, me
   names(var.exprs) <- genes
   names(is.unexpressed) <- genes
 
+  # upper bound of gate.threshold
+  gate.threshold.max <- cos(pi * min(max(gate.open.min, 0), 1440) / 1440)
+  
   for (g in genes) {
     cat('# optimizing', g, '\n# | ')
     var.exprs[[g]]  <- var(exprs[, g])
@@ -212,7 +215,7 @@ Train$optim <- function(exprs, weights, attribute.data, weather.data, models, me
         
         res <- Train$doOptim(models[[g]][[e]][['params']], fn,
                              e, exprs[, g], weights[, g], attribute.data.norm, weather.data.norm,
-                             data.step, time.step, maxit = opts$maxit)
+                             data.step, time.step, maxit = opts$maxit, gate.threshold.max=gate.threshold.max)
         if (res$value < best.devs[[g]] || best.devs[[g]] < 0) {
           best.envs[[g]]   <- e
           best.devs[[g]]   <- res$value
@@ -251,6 +254,7 @@ Train$optim <- function(exprs, weights, attribute.data, weather.data, models, me
       log    <- c(cur$log, method)
       params <- best.params[[g]]
       dev    <- best.devs[[g]]
+      
       fit    <- Train$fitLasso(params, e, exprs[, g], weights[, g], 
                                cur$normalize.attribute(attribute.data), 
                                cur$normalize.weather(weather.data),
@@ -316,8 +320,8 @@ Train$initParamsAndDevs <- function(exprs, weights, attribute.data, weather.data
 }
 
 Train$doOptim <- function(params, fn, env, expr, weight, attribute.data, weather.data,
-                          data.step, time.step, maxit) {
-  param.bounds <- Model$param.bounds(env, attribute.data, weather.data, data.step)
+                          data.step, time.step, maxit, gate.threshold.max=1) {
+  param.bounds <- Model$param.bounds(env, attribute.data, weather.data, data.step, gate.threshold.max)
   bounds.name <- colnames(param.bounds)
   params[bounds.name] <- pmin(pmax(params[bounds.name], param.bounds[1, bounds.name]), param.bounds[2, bounds.name])
   params.period.log <- Model$period.log(params, env)

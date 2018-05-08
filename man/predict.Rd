@@ -56,4 +56,3 @@ prediction.results <- FIT::predict(models.flattened,
                                    prediction.weather)
 }
 }
-

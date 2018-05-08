@@ -4,7 +4,7 @@
 \alias{load.attribute}
 \title{Loads attribute data.}
 \usage{
-load.attribute(path, variable = NULL, entries = NULL)
+load.attribute(path, variable = NULL, sample = NULL)
 }
 \arguments{
 \item{path}{A path of a file that contains attribute data to be loaded.
@@ -17,8 +17,8 @@ has to be specified as well.}
 dataframe object that has been saved in an \code{.Rdata}.
 (See the description of \code{path}.)}
 
-\item{entries}{An optional string array that designates
-the entries of the dataframe to be loaded.}
+\item{sample}{An optional numeric array that designates
+the samples, that is rows, of the dataframe to be loaded.}
 }
 \value{
 An object that represents the attributes of
@@ -29,4 +29,3 @@ An object that represents the attributes of
 \description{
 Loads attribute data.
 }
-

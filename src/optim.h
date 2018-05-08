@@ -31,7 +31,7 @@ std::unique_ptr<Eigen::MatrixXd> inputVars(std::size_t                 nsamples,
     throw Rcpp::exception("params.size() and env.size() are inconsistent.");
   
   Rcpp::NumericVector const D  = attribute_data["age"];
-  Rcpp::NumericVector const N8 = attribute_data["N8"];
+  Rcpp::NumericVector const N8 = attribute_data["type"];
 
   Rcpp::NumericVector timesOfDay = attribute_data["times.of.day"];
   Rcpp::NumericVector Ccos = model::clockCos(timesOfDay);

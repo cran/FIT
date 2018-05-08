@@ -28,7 +28,7 @@ using prep::Es;
 // Interface: Communicates with the calling R process by names
 // - Following names are a part of our protocol:
 //   - gene names
-//   - attribute$data names: "times.pickup", "times.of.day", "age", "N8"
+//   - attribute$data names: "times.pickup", "times.of.day", "age", "type"
 //   - weather$data names: "times.of.day" (consistent with that in attribute$data)
 //                         "wind", "temperature", "humidity", "atmosphere",
 //                         "precipitation", "radiation"
@@ -69,9 +69,9 @@ Rcpp::List initParamsAndDevs(Rcpp::NumericMatrix const   exprs,
     throw Rcpp::exception("data_step and time_step are supposed be scalars.");
 
   Rcpp::Rcout << "# Prep (grids)\n";
-  Rcpp::Rcout << "# - D, N8, C\n";
+  Rcpp::Rcout << "# - D, type, C\n";
   Rcpp::NumericVector const D  = attribute_data["age"];
-  Rcpp::NumericVector const N8 = attribute_data["N8"];
+  Rcpp::NumericVector const N8 = attribute_data["type"];
 
   Rcpp::NumericVector timesOfDay = attribute_data["times.of.day"];
   Rcpp::NumericVector Ccos = model::clockCos(timesOfDay);

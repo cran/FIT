@@ -28,4 +28,3 @@ An object that represents the expression data of microarray/RNA-seq.
 \description{
 Loads expression data.
 }
-

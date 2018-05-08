@@ -3,7 +3,10 @@
 #'
 #' Provides functionality for constructing statistical models of transcriptomic dynamics in field 
 #' conditions. It further offers the function to predict expression of a gene given the attributes 
-#' of samples and meteorological data.     
+#' of samples and meteorological data. Nagano, A. J., Sato, Y., Mihara, M., Antonio, B. A., 
+#' Motoyama, R., Itoh, H., Naganuma, Y., and Izawa, T. (2012). <doi:10.1016/j.cell.2012.10.048>. 
+#' Iwayama, K., Aisaka, Y., Kutsuna, N., and Nagano, A. J. (2017). 
+#' <doi:10.1093/bioinformatics/btx049>.
 #' 
 #' @references
 #' [Nagano et al.] A.J.~Nagano, et al.
@@ -12,7 +15,7 @@
 #'
 #' [Iwayama] K.~Iwayama, et al. 
 #' ``FIT: statistical modeling tool for transcriptome dynamics under fluctuating field conditions,''
-#' (in preparation)
+#' Bioinformatics, btx049 (2017) 
 #'
 #' @section Overview:
 #' The \pkg{FIT} package is an \code{R} implementation
@@ -154,9 +157,6 @@
 #' via \code{requireNamespace('FIT')} and use its API function with
 #' a namaspace qualifier (e.g.~\code{FIT::optim()})
 #' rather than loading \emph{and} attaching it via \code{library('FIT')}.
-#'
-#' @section Sample training and prediction data:
-#' XXX See \code{extdata}.
 #' 
 #' @section Basic usage:
 #' See vignettes for examples of actual scripts that use \pkg{FIT}.
@@ -176,23 +176,6 @@
 #'   # :
 #'   gate.radiation.amplitude = c(-5, 5)
 #' )
-#' }
-#' \dontshow{
-#' grid.coords <- list(
-#'   env.temperature.threshold = c(10, 30),
-#'   env.temperature.amplitude = c(-100/30, 100/30),
-#'   env.radiation.threshold = c(1, 40),
-#'   env.radiation.amplitude = c(-100/80, 100/80),  
-#'   env.temperature.period = c(1, 1440),
-#'   env.radiation.period = c(1, 1440),
-#'   gate.temperature.phase = seq(0, 23*60, 8*60),
-#'   gate.radiation.phase = seq(0, 23*60, 8*60),
-#'   gate.temperature.threshold = cos(pi*seq(8,24,8)/24),
-#'   gate.radiation.threshold = cos(pi*seq(8,24,8)/24),
-#'   gate.temperature.amplitude = c(-5, 5),
-#'   gate.radiation.amplitude = c(-5, 5)
-#' )
-#' }
 #' 
 #' ## create a training recipe
 #' recipe <- FIT::make.recipe(c('temperature', 'radiation'),
@@ -209,36 +192,22 @@
 #' ## names of genes to construct models
 #' genes <- c('Os12g0189300', 'Os02g0724000')
 #' 
-#' \dontshow{
-#' training.attribute   <- FIT::load.attribute(
-#'                        system.file('extdata', 'train.attribute', package='FIT')
-#'                      )
-#' training.weather     <- FIT::load.weather(
-#'                        system.file('extdata', 'train.weather', package='FIT'),
-#'                        'weather', 
-#'                        c('temperature', 'radiation')
-#'                      )
-#' training.expression  <- FIT::load.expression(
-#'                        system.file('extdata', 'train.expression', package='FIT'),
-#'                        'ex',
-#'                        genes
-#'                      )
-#' training.attribute$data <- training.attribute$data[1:50,]
-#' training.expression$rawdata <- training.expression$rawdata[1:50,]
 #' }
+#' 
 #' 
 #' \dontrun{
 #' ## load training data
 #' training.attribute  <- FIT::load.attribute('attribute.2008.txt')
 #' training.weather    <- FIT::load.weather('weather.2008.dat', 'weather')
 #' training.expression <- FIT::load.expression('expression.2008.dat', 'ex', genes)
-#' }
 #' 
 #' ## models will be a list of trained models (length: ngenes)
 #' models <- FIT::train(training.expression,
 #'                      training.attribute,
 #'                      training.weather,
 #'                      recipe)
+#' 
+#' }
 #' 
 #' ################
 #' ## prediction ##
@@ -249,23 +218,14 @@
 #' prediction.attribute  <- FIT::load.attribute('attribute.2009.txt');
 #' prediction.weather    <- FIT::load.weather('weather.2009.dat', 'weather')
 #' prediction.expression <- FIT::load.expression('expression.2009.dat', 'ex', genes)
-#' }
-#' 
-#' \dontshow{
-#' prediction.attribute   <- FIT::load.attribute(
-#'                        system.file('extdata', 'prediction.attribute', package='FIT')
-#'                      )
-#' prediction.weather     <- FIT::load.weather(
-#'                        system.file('extdata', 'prediction.weather', package='FIT'),
-#'                        'weather', 
-#'                        c('temperature', 'radiation')
-#'                      )
-#' }
 #' 
 #' ## predict
 #' prediction.result <- FIT::predict(models[[1]],
 #'                                  prediction.attribute,
 #'                                  prediction.weather)
+#'
+#'
+#'}
 #'
 #' @docType package
 #' @name FIT
@@ -299,13 +259,7 @@ Jma   <- new.env()
 
 #' Supported weather factors.
 #' @examples
-#' \dontrun{
-#' > length(FIT::weather.entries)
-#' [1] 6
-#' > FIT::weather.entries
-#' [1] "wind"          "temperature"   "humidity"      "atmosphere"
-#' [5] "precipitation" "radiation"
-#' }
+#' length(FIT::weather.entries)
 #' @export
 weather.entries <- c('wind', 'temperature', 'humidity',
                      'atmosphere', 'precipitation', 'radiation')
@@ -335,6 +289,8 @@ weather.entries <- c('wind', 'temperature', 'humidity',
 #' @param time.step An integer to specify the basic unit of time (in minute)
 #'     for the transcriptomic models.
 #'     Must be a multiple of the time step of weather data.
+#' @param gate.open.min The minimum opning length in minutes of the gate function for 
+#'     environmental inputs. 
 #' @param opts An optional named list that specifies the arguments to be passed
 #'     to methods that constitute each stage of the model training.
 #'     Each key of the list corresponds to a name of a method.
@@ -363,7 +319,7 @@ weather.entries <- c('wind', 'temperature', 'humidity',
 #'
 #' @export
 make.recipe <- function(envs, init, optim, fit, init.data, time.step,
-                        opts = NULL) {
+                        gate.open.min = 0, opts = NULL) {
   all <- weather.entries
   if (!all(vapply(envs, function(o) o %in% all, TRUE))) stop('some envs are invalid: ', envs)
   if (length(time.step) != 1) stop('multiple time.step forbidden: ', time.step)
@@ -371,9 +327,11 @@ make.recipe <- function(envs, init, optim, fit, init.data, time.step,
   if (!all(vapply(optim, function(o) o %in% c('none', 'lm', 'lasso'), TRUE)))
     stop('some optim methods are invalid: ', optim)
   if (fit != 'fit.lm' && fit != 'fit.lasso') stop('invalid fitting method: ', fit)
+  if (gate.open.min < 0 || gate.open.min > 1440) stop('invalid gate.open.min')
   if (is.null(opts)) opts <- list()
+  
   Model$Recipe(envs=envs, init=init, optim=optim, fit=fit, init.data=init.data,
-               time.step=as.integer(time.step), opts=opts)
+               time.step=as.integer(time.step), gate.open.min=gate.open.min, opts=opts)
 }
 
 ### Notation: `env` runs over `envs`; `e` runs over entries of an `env`
@@ -463,7 +421,8 @@ train <- function(expression, attribute, weather, recipe, weight = NULL, min.exp
     models <- Train$optim(exprs, weights, attribute$data, weather$data, models, o,
                           weather$data.step, recipe$time.step,
                           recipe$opts[[o]]$maxit, recipe$opts[[o]]$nfolds,
-                          min.expressed.rate)
+                          min.expressed.rate, 
+                          recipe$gate.open.min)
 
   cat('# ** Creating optimized models\n')
   models <- Train$fit(exprs, weights, attribute$data, weather$data, models, recipe$fit,
@@ -587,7 +546,8 @@ optim <- function(expression, weight, attribute, weather, recipe,  models,
     Train$optim(expression$rawdata, weight$rawdata, attribute$data, weather$data,
                 models, os[[length(log)+1]],
                 weather$data.step, recipe$time.step,
-                maxit, nfolds)
+                maxit, nfolds, 
+                gate.open.min = recipe$gate.open.min)
   } else {
     models
   }
@@ -639,26 +599,6 @@ fit.models <- function(expression, weight, attribute, weather, recipe, models) {
 }
 
 ################################################################
-#' Adapts the result of \code{train()} to an input to \code{predict()}.
-#'
-#' At the moment \code{FIT::train()} returns a nested
-#' list of trained models but \code{FIT::predict()} expects
-#' to receive them as a flat list.
-#' This ugly adaptor is provided 
-#' in order to prepare for future changes in this implementation detail.
-#' 
-#' @param models A collection of trained models as is returned by
-#'   \code{FIT::train()}.
-#' @return A collection of trained models in a form appropriate
-#'   for the consumption by \code{FIT::predict()}.
-#' @examples
-#' \dontrun{
-#' models <- FIT::train(..)
-#' models2 <- train.to.predict.adaptor(models)
-#' predictions <- FIT::predict(models2, ..)
-#' }
-train.to.predict.adaptor <- function(models) unlist(models)
-
 #' Predicts gene expressions using pretrained models.
 #'
 #' @param models A list of trained models for the genes of interest.
@@ -751,6 +691,19 @@ prediction.errors <- function(models, expression, attribute, weather) {
 ################################################################
 ### reexport some IO stuff
 
+#' Converts attribute data from a dataframe into an object. 
+#' 
+#' @param data A dataframe of the attributes of microarray/RNA-seq data.
+#' @param sample An optional numeric array that designates
+#'     the samples, that is rows, of the dataframe to be loaded.
+#' @return An object that represents the attributes of
+#'     microarray/RNA-seq data.
+#'     Internally, the object holds a dataframe whose number of entries
+#'     (rows) equals that of the samples.
+#' @export
+convert.attribute <- function(data, sample = NULL)
+  IO$Attribute$new(data, sample)
+
 #' Loads attribute data.
 #'
 #' @param path A path of a file that contains attribute data to be loaded.
@@ -761,17 +714,30 @@ prediction.errors <- function(models, expression, attribute, weather) {
 #' @param variable An optional string that designates the name of a
 #'     dataframe object that has been saved in an \code{.Rdata}.
 #'     (See the description of \code{path}.)
-#' @param entries An optional string array that designates
-#'     the entries of the dataframe to be loaded.
+#' @param sample An optional numeric array that designates
+#'     the samples, that is rows, of the dataframe to be loaded.
 #' @return An object that represents the attributes of
 #'     microarray/RNA-seq data.
 #'     Internally, the object holds a dataframe whose number of entries
 #'     (rows) equals that of the samples.
 #'
 #' @export
-load.attribute <- function(path, variable = NULL, entries = NULL)
-  IO$Attribute$new(path, variable, entries)
+load.attribute <- function(path, variable = NULL, sample = NULL){
+  file.data <- IO$slurp(path, variable)
+  IO$Attribute$new(file.data, sample)
+}
 
+#' converts expression data from a dataframe into an object.
+#'
+#' @param data A dataframe of expression data to be loaded.
+#' @param entries An optional string array that designates
+#'     the entries of the dataframe to be loaded.
+#' @return An object that represents the expression data of microarray/RNA-seq.
+#'     Internally, the object holds a matrix of size
+#'     \code{nsamples * ngenes}.
+#' @export
+convert.expression <- function(data, entries = NULL)
+  IO$Expression$new(data, entries)
 #' Loads expression data.
 #'
 #' @param path A path of a file that contains attribute data to be loaded.
@@ -788,9 +754,23 @@ load.attribute <- function(path, variable = NULL, entries = NULL)
 #'     Internally, the object holds a matrix of size
 #'     \code{nsamples * ngenes}.
 #' @export
-load.expression <- function(path, variable = NULL, entries = NULL)
-  IO$Expression$new(path, variable, entries)
+load.expression <- function(path, variable = NULL, entries = NULL){
+  file.data <- IO$slurp(path, variable)
+  IO$Expression$new(file.data, entries)
+}
 
+#' Converts weather data from a dataframe into an object.
+#'
+#' @param data A dataframe of weather data to be converted.
+#' @param entries An optional string array that designates
+#'     the entries of the dataframe to be loaded.
+#' @return An object that reprents the timeseries data of weather factors.
+#'     Internally, the object holds a dataframe of size
+#'     \code{ntimepoints * nfactors}.
+#' @export
+convert.weather <- function(data, entries = IO$weather.entries)
+  IO$Weather$new(data, entries)
+  
 #' Loads weather data.
 #'
 #' @param path A path of a file that contains weather data to be loaded.
@@ -807,9 +787,22 @@ load.expression <- function(path, variable = NULL, entries = NULL)
 #'     Internally, the object holds a dataframe of size
 #'     \code{ntimepoints * nfactors}.
 #' @export
-load.weather <- function(path, variable = NULL, entries = IO$weather.entries)
-  IO$Weather$new(path, variable, entries)
+load.weather <- function(path, variable = NULL, entries = IO$weather.entries){
+  file.data <- IO$slurp(path, variable)
+  IO$Weather$new(file.data, entries)
+}
 
+#' Converts regression weight data from a dataframe into an object.
+#'
+#' @param data A dataframe that contains weight data to be loaded.
+#' @param entries An optional string array that designates
+#'     the entries of the dataframe to be loaded.
+#' @return An object that represents the weights 
+#'     Internally, the object holds a matrix of size
+#'     \code{nsamples * ngenes}.
+#' @export
+convert.weight <- function(data, entries = NULL)
+  IO$Weights$new(data, entries)
 #' Loads regression weight data.
 #'
 #' @param path A path of a file that contains weight data to be loaded.
@@ -826,7 +819,17 @@ load.weather <- function(path, variable = NULL, entries = IO$weather.entries)
 #'     Internally, the object holds a matrix of size
 #'     \code{nsamples * ngenes}.
 #' @export
-load.weight <- function(path, variable = NULL, entries = NULL)
-  IO$Weights$new(path, variable, entries)
-
-
+load.weight <- function(path, variable = NULL, entries = NULL){
+  file.data <- IO$slurp(path, variable)
+  IO$Weights$new(file.data, entries)
+}
+#' Makes trivial weight data
+#' 
+#' @param samples.n A number of samples. 
+#' @param genes A list of genes. 
+#' @return An object that represens the trivial weights. 
+#'        Internally, the object holds an identity matrix of size 
+#'        \code{nsamples * ngenes}.
+#' @export
+make.trivial.weights <- function(samples.n, genes)
+  IO$trivialWeights(samples.n, genes)

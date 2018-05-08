@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // initParamsAndDevs
 Rcpp::List initParamsAndDevs(Rcpp::NumericMatrix const exprs, Rcpp::NumericMatrix const weights, Rcpp::DataFrame const attribute_data, Rcpp::DataFrame const weather_data, Rcpp::CharacterVector const env_factors, Rcpp::List const grid_coordinates, Rcpp::IntegerVector const data_step, Rcpp::IntegerVector const time_step);
-RcppExport SEXP FIT_initParamsAndDevs(SEXP exprsSEXP, SEXP weightsSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP env_factorsSEXP, SEXP grid_coordinatesSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
+RcppExport SEXP _FIT_initParamsAndDevs(SEXP exprsSEXP, SEXP weightsSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP env_factorsSEXP, SEXP grid_coordinatesSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -26,7 +26,7 @@ END_RCPP
 }
 // inputVars
 Rcpp::NumericMatrix inputVars(Rcpp::NumericVector const params, Rcpp::CharacterVector const env, Rcpp::DataFrame const attribute_data, Rcpp::DataFrame const weather_data, Rcpp::IntegerVector const data_step, Rcpp::IntegerVector const time_step);
-RcppExport SEXP FIT_inputVars(SEXP paramsSEXP, SEXP envSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
+RcppExport SEXP _FIT_inputVars(SEXP paramsSEXP, SEXP envSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,7 +42,7 @@ END_RCPP
 }
 // devLm
 Rcpp::NumericVector devLm(Rcpp::NumericVector const params, Rcpp::CharacterVector const env, Rcpp::NumericVector const expr, Rcpp::NumericVector const weight, Rcpp::DataFrame const attribute_data, Rcpp::DataFrame const weather_data, Rcpp::IntegerVector const data_step, Rcpp::IntegerVector const time_step);
-RcppExport SEXP FIT_devLm(SEXP paramsSEXP, SEXP envSEXP, SEXP exprSEXP, SEXP weightSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
+RcppExport SEXP _FIT_devLm(SEXP paramsSEXP, SEXP envSEXP, SEXP exprSEXP, SEXP weightSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -60,7 +60,7 @@ END_RCPP
 }
 // coefsLm
 Rcpp::NumericVector coefsLm(Rcpp::NumericVector const params, Rcpp::CharacterVector const env, Rcpp::NumericVector const expr, Rcpp::NumericVector const weight, Rcpp::DataFrame const attribute_data, Rcpp::DataFrame const weather_data, Rcpp::IntegerVector const data_step, Rcpp::IntegerVector const time_step);
-RcppExport SEXP FIT_coefsLm(SEXP paramsSEXP, SEXP envSEXP, SEXP exprSEXP, SEXP weightSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
+RcppExport SEXP _FIT_coefsLm(SEXP paramsSEXP, SEXP envSEXP, SEXP exprSEXP, SEXP weightSEXP, SEXP attribute_dataSEXP, SEXP weather_dataSEXP, SEXP data_stepSEXP, SEXP time_stepSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -78,11 +78,25 @@ END_RCPP
 }
 // zzzRcppExportBug
 Rcpp::NumericMatrix zzzRcppExportBug();
-RcppExport SEXP FIT_zzzRcppExportBug() {
+RcppExport SEXP _FIT_zzzRcppExportBug() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(zzzRcppExportBug());
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_FIT_initParamsAndDevs", (DL_FUNC) &_FIT_initParamsAndDevs, 8},
+    {"_FIT_inputVars", (DL_FUNC) &_FIT_inputVars, 6},
+    {"_FIT_devLm", (DL_FUNC) &_FIT_devLm, 8},
+    {"_FIT_coefsLm", (DL_FUNC) &_FIT_coefsLm, 8},
+    {"_FIT_zzzRcppExportBug", (DL_FUNC) &_FIT_zzzRcppExportBug, 0},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_FIT(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
