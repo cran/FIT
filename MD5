@@ -1,4 +1,4 @@
-afa37b95af6187e51f2f71fde2f0b8b0 *DESCRIPTION
+2888272832ae73478d25c1a5f3129f5c *DESCRIPTION
 87ce3d811cc61e496f9f2ce05c4bef59 *LICENSE
 fe4c8b4b41aaca8b1760c1dde27e0b40 *NAMESPACE
 dcd433c680722df75b8b274d718b9eaf *R/FIT.R
@@ -10,10 +10,10 @@ adfc28b71a464a4c1b8af9d78d8f1e08 *R/JmaCsv.R
 bcac7f302fe4017194386bc0d0d4d0f9 *R/Norm.R
 535fac15ede0af7b524be7926331208f *R/RcppExports.R
 591edb9b985dc7eaef9ba78ae50ab32c *R/Train.R
-ff09a678c253a946e1925b650ebf9c82 *build/vignette.rds
+7df6f474df728776479e97b8aacf2e0b *build/vignette.rds
 16c9defc1a5a3b1390bbdd733ad77e91 *inst/doc/FIT.R
 217671680acf4bb5cb319ab8b94e36e5 *inst/doc/FIT.Rmd
-8a1aab9825cff164e7dd5ab321b4e4c5 *inst/doc/FIT.html
+6c0fb1d783c18da3f2fbd1c2aa1a076b *inst/doc/FIT.html
 c9c0fed998ff5a08763ec30cb20daf8e *inst/extdata/Jma.stations.csv
 4507658256f94d55dd87672a394af233 *inst/extdata/prediction.attribute
 f19b6321e9bb6631efeb5f24b2c7544d *inst/extdata/prediction.expression
@@ -42,7 +42,7 @@ d8e7e584f766ede3f94015554c16808c *src/RcppExports.cpp
 a62e5aa62a89cd12577ce4402b6862da *src/init.h
 5258a67181e305e3f06de7b5c524f650 *src/model.h
 55aab50ba3594067e746da0a1e23238f *src/optim.h
-79ef0352a1d77a5177b66dea3fd3ae75 *src/prep.h
+0cb7701682551c4f689af525113ed1f1 *src/prep.h
 fd0a1d85c460d1cdb2341d89aec0150f *src/train.cpp
 217671680acf4bb5cb319ab8b94e36e5 *vignettes/FIT.Rmd
 4bc23444c393860b01ccb5158a62f3d6 *vignettes/bibliography.bib

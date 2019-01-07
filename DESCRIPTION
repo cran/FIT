@@ -1,6 +1,6 @@
 Package: FIT
 Title: Transcriptomic Dynamics Models in Field Conditions
-Version: 0.0.5
+Version: 0.0.6
 Authors@R: c(person("Koji", "Iwayama", email = "fieldtranscriptome@gmail.com",
                     role = c("cre")),
              person("Yuri", "Aisaka", email = "aisaka@lpixel.net",
@@ -20,11 +20,11 @@ LinkingTo: Rcpp, RcppEigen (>= 0.3.2.1.2)
 SystemRequirements: C++11
 NeedsCompilation: yes
 RoxygenNote: 6.0.1
-Packaged: 2018-05-08 03:38:04 UTC; koji
+Packaged: 2019-01-01 04:26:18 UTC; koji
 Author: Koji Iwayama [cre],
   Yuri Aisaka [aut]
 Maintainer: Koji Iwayama <fieldtranscriptome@gmail.com>
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Repository: CRAN
-Date/Publication: 2018-05-08 06:35:21 UTC
+Date/Publication: 2019-01-07 14:50:15 UTC
